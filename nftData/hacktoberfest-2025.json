@@ -1,0 +1,9 @@
+{
+  "name": "Hacktoberfest 2025 Badge",
+  "description": "This NFT certifies your participation in Hacktoberfest 2025.",
+  "image": "ipfs://bafybeidegdtspapzd33vconbyhom5suzr4mrcwsiqaqs227pcfq74k7stq",
+  "attributes": [
+    { "trait_type": "Event", "value": "Hacktoberfest" },
+    { "trait_type": "Year", "value": "2025" }
+  ]
+}

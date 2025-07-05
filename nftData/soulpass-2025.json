@@ -1,0 +1,9 @@
+{
+  "name": "SoulPass Genesis NFT",
+  "description": "You were part of the first SoulPass event!",
+  "image": "ipfs://bafybeiakf35j64kkvu4hhqdtzgqxsqezbkipso6nnwx36x2fbmun7vxrmq",
+  "attributes": [
+    { "trait_type": "Launch Event", "value": "Genesis" },
+    { "trait_type": "Year", "value": "2025" }
+  ]
+}
