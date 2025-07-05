@@ -1,0 +1,38 @@
+[
+  {
+    "id": "event-1",
+    "title": "Hacktoberfest 2025",
+    "date": "2025-10-10",
+    "description": "Celebrate open-source with SoulPass!",
+    "image": "/images/hacktoberfest.png",
+    "organizer": "Open Source Org",
+    "location": "Online",
+    "nft": {
+      "name": "Hacktoberfest 2025 Badge",
+      "description": "This NFT certifies your participation in Hacktoberfest 2025.",
+      "image": "ipfs://bafy...xyz",
+      "attributes": [
+        { "trait_type": "Event", "value": "Hacktoberfest" },
+        { "trait_type": "Year", "value": "2025" }
+      ]
+    }
+  },
+  {
+    "id": "event-2",
+    "title": "SoulPass Launch",
+    "date": "2025-08-01",
+    "description": "Official launch of the SoulPass platform.",
+    "image": "/images/soulpass-launch.png",
+    "organizer": "SoulPass Team",
+    "location": "Raisoni College",
+    "nft": {
+      "name": "SoulPass Genesis NFT",
+      "description": "You were part of the first SoulPass event!",
+      "image": "ipfs://bafy...genesis",
+      "attributes": [
+        { "trait_type": "Launch Event", "value": "Genesis" },
+        { "trait_type": "Year", "value": "2025" }
+      ]
+    }
+  }
+]

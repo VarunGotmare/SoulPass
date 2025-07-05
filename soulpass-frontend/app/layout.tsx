@@ -4,7 +4,6 @@ import "./globals.css";
 
 import WagmiPrivyProvider from '@/providers/WagmiPrivyProvider';
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,15 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SoulPass',
-  description: 'Proof of Presence with soulbound NFTs',
+  title: "SoulPass",
+  description: "Proof of Presence with soulbound NFTs",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <WagmiPrivyProvider>{children}</WagmiPrivyProvider>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <WagmiPrivyProvider>
+          {children}
+        </WagmiPrivyProvider>
       </body>
     </html>
   );

@@ -1,39 +1,24 @@
-// app/providers/WagmiPrivyProvider.tsx
 'use client';
 
-import { createConfig, http, WagmiProvider } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
 import { PrivyProvider } from '@privy-io/react-auth';
+import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
-// const privyAppId = "cmcovi3wm01u3l40mcf17b1ic";
-
-const wagmiConfig = createConfig({
-  chains: [baseSepolia],
-  transports: {
-    [baseSepolia.id]: http(),
-  },
-  ssr: true,
-});
+import { wagmiConfig } from '@/lib/wagmiConfig';
+import { privyConfig } from '@/lib/privyConfig';
 
 const queryClient = new QueryClient();
 
 export default function WagmiPrivyProvider({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId= {privyAppId}
-      config={{
-        embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
-        },
-      }}
+      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+      config={privyConfig}
     >
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={wagmiConfig}>
           {children}
-        </QueryClientProvider>
-      </WagmiProvider>
+        </WagmiProvider>
+      </QueryClientProvider>
     </PrivyProvider>
   );
 }

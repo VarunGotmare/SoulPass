@@ -1,0 +1,14 @@
+[
+  {
+    "code": "ABC123",
+    "eventId": "event-1",
+    "claimed": false,
+    "claimedBy": null
+  },
+  {
+    "code": "XYZ789",
+    "eventId": "event-2",
+    "claimed": false,
+    "claimedBy": null
+  }
+]
