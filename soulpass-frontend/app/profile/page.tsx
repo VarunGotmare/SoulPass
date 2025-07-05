@@ -3,15 +3,18 @@
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { readContracts } from '@wagmi/core';
-import { soulPassContract } from '@/lib/contract';
-import { baseSepolia } from 'viem/chains';
-import { publicClient } from '@/lib/contract';
+import { soulPassContract, publicClient } from '@/lib/contract';
+
+interface NFTMetadata {
+  name: string;
+  description: string;
+  image: string;
+}
 
 export default function ProfilePage() {
   const { ready, authenticated, user } = usePrivy();
   const router = useRouter();
-  const [tokenURIs, setTokenURIs] = useState<string[]>([]);
+  const [nfts, setNfts] = useState<NFTMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +32,8 @@ export default function ProfilePage() {
           args: [user.wallet.address],
         });
 
-        const promises = [];
+        const nftResults: NFTMetadata[] = [];
+
         for (let i = 0; i < Number(balance); i++) {
           const tokenId = await publicClient.readContract({
             ...soulPassContract,
@@ -37,17 +41,28 @@ export default function ProfilePage() {
             args: [user.wallet.address, BigInt(i)],
           });
 
-          promises.push(
-            publicClient.readContract({
-              ...soulPassContract,
-              functionName: 'tokenURI',
-              args: [tokenId],
-            })
-          );
+          const tokenURI: string = await publicClient.readContract({
+            ...soulPassContract,
+            functionName: 'tokenURI',
+            args: [tokenId],
+          });
+
+          console.log('Fetched TokenURI:', tokenId.toString(), tokenURI);
+
+          const metadataURL = tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+
+          const metadata = await fetch(metadataURL)
+            .then(res => res.json())
+            .then((data) => ({
+              ...data,
+              image: data.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/'),
+            }))
+            .catch(() => null); // skip if metadata is broken
+
+          if (metadata) nftResults.push(metadata);
         }
 
-        const uris = await Promise.all(promises);
-        setTokenURIs(uris);
+        setNfts(nftResults);
       } catch (err) {
         console.error('Error fetching NFTs:', err);
       } finally {
@@ -58,34 +73,40 @@ export default function ProfilePage() {
     if (authenticated && user?.wallet?.address) fetchNFTs();
   }, [authenticated, user]);
 
-  if (!ready || !authenticated) return <p>Loading...</p>;
+  if (!ready || !authenticated) return <p>Loading profile...</p>;
 
   return (
     <main className="min-h-screen px-6 py-10 bg-gray-50">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">👤 Your Profile</h1>
-        <p className="text-sm text-gray-600 mb-4">Email: {user.email?.address}</p>
-        <p className="text-sm text-gray-600 mb-8">Wallet: {user.wallet?.address}</p>
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold">👤 Your Profile</h1>
+          <p className="text-sm text-gray-600">Email: {user.email?.address}</p>
+          <p className="text-sm text-gray-600 mb-4">Wallet: {user.wallet?.address}</p>
+        </header>
 
-        <h2 className="text-xl font-semibold mb-4">🎟️ Your Event NFTs</h2>
-        {loading ? (
-          <p>Loading NFTs...</p>
-        ) : tokenURIs.length === 0 ? (
-          <p>No NFTs found.</p>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {tokenURIs.map((uri, index) => (
-              <div key={index} className="bg-white p-4 rounded-xl shadow border">
-                <img
-                  src={uri.replace('ipfs://', 'https://ipfs.io/ipfs/')}
-                  alt={`NFT ${index}`}
-                  className="rounded-md mb-3 w-full h-40 object-cover"
-                />
-                <p className="text-sm break-words text-gray-700">{uri}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">🎟️ Your Event NFTs</h2>
+
+          {loading ? (
+            <p>Loading NFTs...</p>
+          ) : nfts.length === 0 ? (
+            <p>No NFTs found.</p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {nfts.map((nft, index) => (
+                <div key={index} className="bg-white border shadow p-4 rounded-xl">
+                  <img
+                    src={nft.image}
+                    alt={nft.name}
+                    className="w-full h-40 object-cover rounded mb-3"
+                  />
+                  <h3 className="text-lg font-bold">{nft.name}</h3>
+                  <p className="text-gray-600 text-sm">{nft.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
