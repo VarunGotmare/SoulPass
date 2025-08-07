@@ -9,4 +9,4 @@ services:
     working_dir: /app
     ports:
       - "8545:8545"
-    command: npx hardhat node
+    command: ./run.sh

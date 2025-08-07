@@ -4,7 +4,7 @@
     "title": "Hacktoberfest 2025",
     "date": "2025-10-10",
     "description": "Celebrate open-source with SoulPass!",
-    "image": "/images/hacktoberfest.png",
+    "image": "hacktober.png",
     "organizer": "Open Source Org",
     "location": "Online",
     "nft": {
@@ -22,7 +22,7 @@
     "title": "SoulPass Launch",
     "date": "2025-08-01",
     "description": "Official launch of the SoulPass platform.",
-    "image": "/images/soulpass-launch.png",
+    "image": "soullaunch.png",
     "organizer": "SoulPass Team",
     "location": "Raisoni College",
     "nft": {

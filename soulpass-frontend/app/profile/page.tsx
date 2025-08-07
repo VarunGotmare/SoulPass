@@ -4,6 +4,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { soulPassContract, publicClient } from '@/lib/contract';
+import Navbar from '../../Components/Navbar'; // ✅ Import Navbar
 
 interface NFTMetadata {
   name: string;
@@ -57,7 +58,7 @@ export default function ProfilePage() {
               ...data,
               image: data.image.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/'),
             }))
-            .catch(() => null); // skip if metadata is broken
+            .catch(() => null);
 
           if (metadata) nftResults.push(metadata);
         }
@@ -76,38 +77,41 @@ export default function ProfilePage() {
   if (!ready || !authenticated) return <p>Loading profile...</p>;
 
   return (
-    <main className="min-h-screen px-6 py-10 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold">👤 Your Profile</h1>
-          <p className="text-sm text-gray-600">Email: {user.email?.address}</p>
-          <p className="text-sm text-gray-600 mb-4">Wallet: {user.wallet?.address}</p>
-        </header>
+    <>
+      <Navbar /> {/* ✅ Added Navbar */}
+      <main className="min-h-screen px-6 py-10 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <header className="mb-8">
+            <h1 className="text-2xl font-semibold">👤 Your Profile</h1>
+            <p className="text-sm text-gray-600">Email: {user.email?.address}</p>
+            <p className="text-sm text-gray-600 mb-4">Wallet: {user.wallet?.address}</p>
+          </header>
 
-        <section>
-          <h2 className="text-xl font-semibold mb-4">🎟️ Your Event NFTs</h2>
+          <section>
+            <h2 className="text-xl font-semibold mb-4">🎟️ Your Event NFTs</h2>
 
-          {loading ? (
-            <p>Loading NFTs...</p>
-          ) : nfts.length === 0 ? (
-            <p>No NFTs found.</p>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2">
-              {nfts.map((nft, index) => (
-                <div key={index} className="bg-white border shadow p-4 rounded-xl">
-                  <img
-                    src={nft.image}
-                    alt={nft.name}
-                    className="w-full h-40 object-cover rounded mb-3"
-                  />
-                  <h3 className="text-lg font-bold">{nft.name}</h3>
-                  <p className="text-gray-600 text-sm">{nft.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
+            {loading ? (
+              <p>Loading NFTs...</p>
+            ) : nfts.length === 0 ? (
+              <p>No NFTs found.</p>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                {nfts.map((nft, index) => (
+                  <div key={index} className="bg-white border shadow p-4 rounded-xl">
+                    <img
+                      src={nft.image}
+                      alt={nft.name}
+                      className="w-full h-40 object-cover rounded mb-3"
+                    />
+                    <h3 className="text-lg font-bold">{nft.name}</h3>
+                    <p className="text-gray-600 text-sm">{nft.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

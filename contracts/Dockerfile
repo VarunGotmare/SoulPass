@@ -10,8 +10,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the Hardhat project
+# Copy entire project
 COPY . .
 
-# Default command for hardhat node
-CMD ["npx", "hardhat", "node"]
+# Make the entrypoint script executable
+RUN chmod +x run.sh
+
+# Start everything via script
+CMD ["./run.sh"]
