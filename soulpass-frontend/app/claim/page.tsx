@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
 import { useWalletClient } from 'wagmi';
+import QrScanner from 'qr-scanner';
 import claimCodes from '@/data/claimCodes.json';
 import { soulPassContract } from '@/lib/contract';
 import Navbar from '@/Components/Navbar';
-import { Html5Qrcode } from 'html5-qrcode';
 
 interface ClaimCode {
   code: string;
@@ -17,59 +17,96 @@ interface ClaimCode {
 export default function ClaimPage() {
   const { ready, authenticated } = usePrivy();
   const router = useRouter();
-  const [codeInput, setCodeInput] = useState('');
-  const [status, setStatus] = useState<string | null>(null);
-  const { data: walletClient } = useWalletClient();
-  const qrRef = useRef<HTMLDivElement>(null);
+  const { data: walletClient } = useWalletClient(); // ✅ correct hook usage
 
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
+
+  const [scanning, setScanning] = useState(false);
+  const [imageUploaded, setImageUploaded] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const scannedCodes = useRef<Set<string>>(new Set());
+
+  // Redirect if not authenticated
   useEffect(() => {
     if (ready && !authenticated) {
       router.replace('/');
     }
   }, [ready, authenticated, router]);
 
-  // ⚡ Init QR Code scanner once on mount
-  useEffect(() => {
-    if (!qrRef.current) return;
+  const startScanner = () => {
+    if (!videoRef.current || scannerRef.current) return;
 
-    const html5QrCode = new Html5Qrcode("qr-reader");
+    scannerRef.current = new QrScanner(
+      videoRef.current,
+      async (result) => {
+        if (scannedCodes.current.has(result.data)) return;
+        scannedCodes.current.add(result.data);
+        setStatus('✅ QR code scanned. Claiming...');
+        await handleClaim(result.data);
+      },
+      { returnDetailedScanResult: true }
+    );
 
-    Html5Qrcode.getCameras().then((devices) => {
-      if (devices && devices.length) {
-        const cameraId = devices[0].id;
-        html5QrCode.start(
-          cameraId,
-          {
-            fps: 10,
-            qrbox: 250,
-          },
-          (decodedText) => {
-            setCodeInput(decodedText);
-            html5QrCode.stop(); // Stop scanning after success
-          },
-          (error) => {
-            console.warn('QR scan error', error);
-          }
-        );
-      }
+    scannerRef.current.start();
+    setScanning(true);
+  };
+
+  const stopScanner = () => {
+    scannerRef.current?.stop();
+    scannerRef.current?.destroy();
+    scannerRef.current = null;
+    setScanning(false);
+  };
+
+  const toggleScanner = () => {
+    if (scanning) {
+      stopScanner();
+    } else {
+      startScanner();
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    stopScanner(); // stop live scan if active
+
+    const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true }).catch((err) => {
+      console.error(err);
+      setStatus('❌ Could not read QR from image.');
     });
 
-    return () => {
-      html5QrCode.stop().catch(() => {});
-    };
-  }, []);
+    if (result?.data) {
+      setImageUploaded(true);
+      setStatus('✅ QR code scanned from image. Claiming...');
+      await handleClaim(result.data);
+    }
+  };
 
-  const handleClaim = async () => {
-    const code = codeInput.trim();
+  const handleRemoveImage = () => {
+    setImageUploaded(false);
+    setStatus(null);
+    scannedCodes.current.clear();
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleClaim = async (rawCode: string) => {
+    const code = rawCode.trim();
     const match = (claimCodes as ClaimCode[]).find((c) => c.code === code);
 
     if (!match) {
       setStatus('❌ Invalid claim code.');
+      scannedCodes.current.delete(code);
       return;
     }
 
     if (!walletClient || !walletClient.account) {
-      setStatus('❌ Wallet not connected. Please refresh.');
+      setStatus('❌ Wallet not connected. Please refresh or reconnect wallet.');
+      scannedCodes.current.delete(code);
       return;
     }
 
@@ -88,9 +125,10 @@ export default function ClaimPage() {
       });
 
       setStatus(`✅ NFT claimed for event "${match.eventId}"!\nTx Hash: ${hash}`);
-    } catch (error: any) {
-      console.error(error);
-      setStatus(`❌ Error: ${error?.shortMessage || error?.message || 'Unknown error'}`);
+    } catch (err: any) {
+      console.error(err);
+      setStatus(`❌ Error: ${err?.shortMessage || err?.message || 'Unknown error'}`);
+      scannedCodes.current.delete(code);
     }
   };
 
@@ -100,32 +138,45 @@ export default function ClaimPage() {
     <>
       <Navbar />
       <main className="min-h-screen px-6 py-10 bg-gray-50">
-        <div className="max-w-xl mx-auto">
-          <h1 className="text-2xl font-semibold mb-6">🎟️ Claim Your Event NFT</h1>
+        <div className="max-w-xl mx-auto space-y-6">
+          <h1 className="text-2xl font-semibold">🎟️ Claim Your Event NFT</h1>
+          <p className="text-gray-700">Scan using your camera or upload a QR image to claim instantly.</p>
 
-          <p className="mb-4 text-gray-700">
-            Enter the claim code manually or scan it via QR.
-          </p>
+          <div className="flex flex-col items-center gap-4">
+            {/* Video feed */}
+            <video ref={videoRef} className="w-full max-w-sm rounded shadow bg-white" />
 
-          <input
-            type="text"
-            value={codeInput}
-            onChange={(e) => setCodeInput(e.target.value)}
-            placeholder="Enter claim code..."
-            className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            {/* Hybrid scan toggle */}
+            <button
+              onClick={toggleScanner}
+              className={`px-4 py-2 rounded text-white ${scanning ? 'bg-red-500' : 'bg-green-600'}`}
+            >
+              {scanning ? '🛑 Stop Scanning' : '📷 Start Scanning'}
+            </button>
 
-          <div className="w-full flex justify-center mb-4">
-            <div id="qr-reader" ref={qrRef} className="w-full max-w-sm h-64 bg-white rounded shadow" />
+            {/* Hybrid image upload toggle */}
+            {!imageUploaded ? (
+              <label className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded cursor-pointer">
+                📁 Upload QR Image
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUpload}
+                  className="hidden"
+                />
+              </label>
+            ) : (
+              <button
+                onClick={handleRemoveImage}
+                className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded"
+              >
+                ❌ Remove Image
+              </button>
+            )}
           </div>
 
-          <button
-            onClick={handleClaim}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-          >
-            Claim NFT
-          </button>
-
+          {/* Status message */}
           {status && (
             <p className="mt-4 text-center text-sm font-medium text-gray-800 whitespace-pre-line">
               {status}
