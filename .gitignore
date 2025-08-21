@@ -9,3 +9,6 @@ cache/
 # Docker
 *.log
 docker-volume/
+
+#local documentation
+docs/
