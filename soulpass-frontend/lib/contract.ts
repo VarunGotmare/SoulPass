@@ -1,7 +1,7 @@
 import { createPublicClient, http, defineChain } from 'viem';
 import SoulPassNFT from '../abi/SoulPassNFT.json';
 
-// 👇 Define Hardhat local chain manually
+//  Define Hardhat local chain manually
 export const hardhatLocal = defineChain({
   id: 31337,
   name: 'Hardhat',

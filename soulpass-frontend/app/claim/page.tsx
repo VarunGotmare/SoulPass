@@ -17,7 +17,7 @@ interface ClaimCode {
 export default function ClaimPage() {
   const { ready, authenticated } = usePrivy();
   const router = useRouter();
-  const { data: walletClient } = useWalletClient(); // ✅ correct hook usage
+  const { data: walletClient } = useWalletClient(); 
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
