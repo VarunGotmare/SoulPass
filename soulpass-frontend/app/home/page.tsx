@@ -1,28 +1,24 @@
 'use client';
 
 import { usePrivy } from '@privy-io/react-auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import events from '@/data/events.json';
-import Navbar from '../../Components/Navbar'; // ✅ Import your shared Navbar component
+import Navbar from '../../Components/Navbar'; // ✅ Shared Navbar
 
 interface Event {
-  id: string;
-  title: string;
-  date: string;
+  _id: string;
+  name: string;
   description: string;
   image?: string;
-  nft?: {
-    name: string;
-    description: string;
-    image: string;
-    attributes?: { trait_type: string; value: string }[];
-  };
+  createdAt: string;
 }
 
 export default function HomePage() {
   const { ready, authenticated, user } = usePrivy();
   const router = useRouter();
+
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (ready && !authenticated) {
@@ -30,9 +26,24 @@ export default function HomePage() {
     }
   }, [ready, authenticated, router]);
 
+  useEffect(() => {
+    if (ready && authenticated) {
+      fetch('/api/events')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) setEvents(data.events);
+        })
+        .catch((err) => console.error('❌ Error fetching events:', err))
+        .finally(() => setLoading(false));
+    }
+  }, [ready, authenticated]);
+
   if (!ready || !authenticated) {
     return <p className="text-center mt-20 text-lg">Loading your dashboard...</p>;
   }
+
+  const ipfsToGateway = (uri?: string) =>
+    uri ? uri.replace('ipfs://', 'https://ipfs.io/ipfs/') : '';
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-purple-100 text-gray-800">
@@ -50,35 +61,42 @@ export default function HomePage() {
 
         <div>
           <h3 className="text-2xl font-semibold mb-6">📅 Upcoming Events</h3>
-          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {(events as Event[]).map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-400 transition p-4 flex flex-col justify-between"
-              >
-                {event.image && (
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="rounded-lg mb-3 w-full h-40 object-cover"
-                  />
-                )}
-                <div>
-                  <h4 className="text-lg font-bold text-blue-800">{event.title}</h4>
-                  <span className="inline-block mt-1 text-sm text-white bg-blue-600 px-2 py-0.5 rounded">
-                    {event.date}
-                  </span>
-                  <p className="mt-2 text-sm text-gray-700">{event.description}</p>
-                </div>
-                <button
-                  className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded"
-                  disabled
+
+          {loading ? (
+            <p className="text-gray-500">⏳ Loading events...</p>
+          ) : events.length === 0 ? (
+            <p className="text-gray-500 italic">No events available yet.</p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {events.map((event) => (
+                <div
+                  key={event._id}
+                  className="bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-400 transition p-4 flex flex-col justify-between"
                 >
-                  🎟️ Attend Now
-                </button>
-              </div>
-            ))}
-          </div>
+                  {event.image && (
+                    <img
+                      src={ipfsToGateway(event.image)}
+                      alt={event.name}
+                      className="rounded-lg mb-3 w-full h-40 object-cover"
+                    />
+                  )}
+                  <div>
+                    <h4 className="text-lg font-bold text-blue-800">{event.name}</h4>
+                    <span className="inline-block mt-1 text-sm text-white bg-blue-600 px-2 py-0.5 rounded">
+                      {new Date(event.createdAt).toLocaleDateString()}
+                    </span>
+                    <p className="mt-2 text-sm text-gray-700">{event.description}</p>
+                  </div>
+                  <button
+                    className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded"
+                    disabled
+                  >
+                    🎟️ Attend Now
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 

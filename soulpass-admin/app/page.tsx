@@ -7,9 +7,9 @@ interface Event {
   _id: string;
   name: string;
   description: string;
-  image?: string;       // ipfs://
+  image?: string; // ipfs://
   metadataUri?: string; // ipfs://
-  claimCode?: string;   // optional
+  claimCode?: string; // optional
   createdAt: string;
 }
 
@@ -77,17 +77,15 @@ export default function AdminPage() {
                 </p>
               )}
 
-              {/* Metadata Link */}
-              {event.metadataUri && (
+              {/* QR Download Button */}
+              {event.claimCode && (
                 <a
-                  href={ipfsToGateway(event.metadataUri)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-400 hover:underline mt-2 inline-block"
+                  href={`/api/qr/${event.claimCode}`}
+                  className="mt-3 inline-block px-3 py-1 text-xs rounded-md bg-blue-600 hover:bg-blue-500 text-white transition"
                 >
-                  View Metadata ↗
+                  ⬇ Download QR
                 </a>
-              )}
+              )}  
             </li>
           ))}
         </ul>

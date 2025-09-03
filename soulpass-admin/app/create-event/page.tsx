@@ -11,17 +11,12 @@ export default function CreateEventPage() {
 
   const router = useRouter();
 
-  // simple random claim code generator
-  const generateClaimCode = () => {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
-  };
+  const generateClaimCode = () =>
+    Math.random().toString(36).substring(2, 10).toUpperCase();
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!image) {
-      alert("⚠️ Please select an image for the event.");
-      return;
-    }
+    if (!image) return alert("⚠️ Please select an image");
 
     setLoading(true);
     const claimCode = generateClaimCode();
@@ -33,39 +28,36 @@ export default function CreateEventPage() {
       formData.append("image", image);
       formData.append("claimCode", claimCode);
 
-      // ✅ call the correct API route
       const res = await fetch("/api/create-event", {
         method: "POST",
         body: formData,
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
 
-      if (res.ok) {
-        alert(
-          `✅ Event created!\n\n📌 Claim Code: ${claimCode}\n🔗 Tx Hash: ${data.txHash}`
-        );
+      // reset
+      setName("");
+      setDescription("");
+      setImage(null);
 
-        // reset form
-        setName("");
-        setDescription("");
-        setImage(null);
-
-        // back to dashboard
-        router.push("/");
-      } else {
-        alert("❌ Error: " + data.error);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("❌ Failed to create event");
+      // redirect to home
+      router.push("/");
+    } catch (err: any) {
+      alert("❌ " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="p-8 max-w-2xl mx-auto">
+    <main className="relative p-8 max-w-2xl mx-auto">
+      {loading && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-lg z-50">
+          ⏳ Creating Event...
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold mb-6">➕ Create Event</h1>
 
       <form onSubmit={handleCreateEvent} className="space-y-4">

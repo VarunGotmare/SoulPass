@@ -1,82 +1,13 @@
-// app/api/events/route.ts
+// app/api/create-event/route.ts
 import { NextResponse } from "next/server";
 import { pinata } from "@/lib/pinata";
 import { getSoulPassContract } from "@/lib/contracts";
 import { getCollections, ensureIndexes } from "@/lib/db";
+import { ObjectId } from "mongodb";
 
-/**
- * Background worker to process event creation
- */
-async function processEventCreation({
-  name,
-  description,
-  claimCode,
-  file,
-}: {
-  name: string;
-  description: string;
-  claimCode: string;
-  file: File;
-}) {
-  try {
-    await ensureIndexes();
-    const { events, claimCodes } = await getCollections();
-
-    // 1. Upload image to Pinata
-    const imageUpload = await pinata.upload.public.file(file);
-    const imageUri = `ipfs://${imageUpload.cid}`;
-
-    // 2. Upload metadata JSON to Pinata
-    const metadata = {
-      name,
-      description,
-      image: imageUri,
-      createdAt: new Date().toISOString(),
-    };
-    const upload = await pinata.upload.public.json(metadata);
-    const metadataUri = `ipfs://${upload.cid}`;
-
-    // 3. Insert into events collection
-    const eventDoc = {
-      name,
-      description,
-      image: imageUri,
-      metadataUri,
-      createdAt: new Date(),
-    };
-    const result = await events.insertOne(eventDoc);
-
-    // 4. Insert into claimCodes collection
-    const claimCodeDoc = {
-      eventId: result.insertedId,
-      claimCode,
-      name,
-      description,
-      image: imageUri,
-      metadataCID: upload.IpfsHash,
-      used: false,
-      createdAt: new Date(),
-    };
-    await claimCodes.insertOne(claimCodeDoc);
-
-    // 5. Call contract
-    const contract = await getSoulPassContract();
-    const tx = await contract.setClaimCode(claimCode, metadataUri);
-    await tx.wait();
-
-    console.log("✅ Event + ClaimCode processed:", {
-      eventId: result.insertedId,
-      txHash: tx.hash,
-    });
-  } catch (err: any) {
-    console.error("❌ Background job failed:", err.message);
-  }
-}
-
-/**
- * API route
- */
 export async function POST(req: Request) {
+  const sessionIds: { eventId?: ObjectId; claimCodeId?: ObjectId } = {};
+
   try {
     const formData = await req.formData();
     const name = formData.get("name") as string;
@@ -91,9 +22,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // quick duplicate check
     await ensureIndexes();
-    const { claimCodes } = await getCollections();
+    const { events, claimCodes } = await getCollections();
+
+    // prevent duplicate claim code
     const existing = await claimCodes.findOne({ claimCode });
     if (existing) {
       return NextResponse.json(
@@ -102,20 +34,66 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Kick off background job without blocking
-    queueMicrotask(() =>
-      processEventCreation({ name, description, claimCode, file })
-    );
+    // 1. Upload image to Pinata
+    const imageUpload = await pinata.upload.public.file(file);
+    const imageUri = `ipfs://${imageUpload.cid}`;
+
+    // 2. Upload metadata JSON
+    const metadata = {
+      name,
+      description,
+      image: imageUri,
+      createdAt: new Date().toISOString(),
+    };
+    const upload = await pinata.upload.public.json(metadata);
+    const metadataUri = `ipfs://${upload.cid}`;
+
+    // 3. Insert event
+    const eventDoc = {
+      name,
+      description,
+      image: imageUri,
+      createdAt: new Date(),
+    };
+    const eventRes = await events.insertOne(eventDoc);
+    sessionIds.eventId = eventRes.insertedId;
+
+    // 4. Insert claimCode
+    const claimCodeDoc = {
+      eventId: eventRes.insertedId,
+      claimCode,
+      metadataCID: metadataUri,
+      used: false,
+      createdAt: new Date(),
+      usedAt: null,
+    };
+    const claimRes = await claimCodes.insertOne(claimCodeDoc);
+    sessionIds.claimCodeId = claimRes.insertedId;
+
+    // 5. Call contract (if fails → rollback DB + throw)
+    const contract = await getSoulPassContract();
+    const tx = await contract.setClaimCode(claimCode, metadataUri);
+    const receipt = await tx.wait();
 
     return NextResponse.json({
       success: true,
-      message:
-        "Event creation started. It will be processed in the background.",
+      txHash: receipt.transactionHash,
+      claimCode,
     });
   } catch (err: any) {
-    console.error("Error starting event creation:", err);
+    console.error("❌ Event creation failed:", err.message);
+
+    // rollback inserted docs
+    const { events, claimCodes } = await getCollections();
+    if (sessionIds.claimCodeId) {
+      await claimCodes.deleteOne({ _id: sessionIds.claimCodeId });
+    }
+    if (sessionIds.eventId) {
+      await events.deleteOne({ _id: sessionIds.eventId });
+    }
+
     return NextResponse.json(
-      { success: false, error: "Failed to start event creation: " + err.message },
+      { success: false, error: "Failed to create event: " + err.message },
       { status: 500 }
     );
   }

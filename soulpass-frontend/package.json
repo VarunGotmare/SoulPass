@@ -14,6 +14,7 @@
     "@tanstack/react-query": "^5.81.5",
     "framer-motion": "^12.23.11",
     "html5-qrcode": "^2.3.8",
+    "mongodb": "^6.19.0",
     "next": "15.3.5",
     "qr-scanner": "^1.4.2",
     "react": "^19.0.0",

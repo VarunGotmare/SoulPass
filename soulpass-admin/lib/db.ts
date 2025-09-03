@@ -33,21 +33,27 @@ async function getDb(): Promise<Db> {
   return c.db(dbName);
 }
 
-/** Events collection */
+/**
+ * Events collection
+ * ⚠️ Only stores event info and image, NOT metadata or claim codes
+ */
 export interface EventDoc {
   _id?: ObjectId;
   name: string;
   description: string;
-  image: string;        // ipfs://<imageCID>
+  image: string;   // ipfs://<imageCID>
   createdAt: Date;
 }
 
-/** ClaimCodes collection */
+/**
+ * ClaimCodes collection
+ * Stores claim code + reference to event + metadataCID
+ */
 export interface ClaimCodeDoc {
   _id?: ObjectId;
-  eventId: ObjectId;    // ref -> events._id
-  claimCode: string;    // unique
-  metadataCID: string;  // ipfs://<metadataCID>
+  eventId: ObjectId;   // reference to events._id
+  claimCode: string;   // unique code
+  metadataCID: string; // ipfs://<metadataCID>
   used: boolean;
   createdAt: Date;
   usedAt?: Date | null;
