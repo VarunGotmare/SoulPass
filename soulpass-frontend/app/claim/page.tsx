@@ -17,7 +17,7 @@ interface ClaimCode {
 export default function ClaimPage() {
   const { ready, authenticated } = usePrivy();
   const router = useRouter();
-  const { data: walletClient } = useWalletClient(); 
+  const { data: walletClient } = useWalletClient();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,11 +62,8 @@ export default function ClaimPage() {
   };
 
   const toggleScanner = () => {
-    if (scanning) {
-      stopScanner();
-    } else {
-      startScanner();
-    }
+    if (scanning) stopScanner();
+    else startScanner();
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,8 +72,7 @@ export default function ClaimPage() {
 
     stopScanner(); // stop live scan if active
 
-    const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true }).catch((err) => {
-      console.error(err);
+    const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true }).catch(() => {
       setStatus('❌ Could not read QR from image.');
     });
 
@@ -126,37 +122,48 @@ export default function ClaimPage() {
 
       setStatus(`✅ NFT claimed for event "${match.eventId}"!\nTx Hash: ${hash}`);
     } catch (err: any) {
-      console.error(err);
       setStatus(`❌ Error: ${err?.shortMessage || err?.message || 'Unknown error'}`);
       scannedCodes.current.delete(code);
     }
   };
 
-  if (!ready || !authenticated) return <p>Loading...</p>;
+  if (!ready || !authenticated) return <p className="text-center mt-20 text-gray-400">Loading...</p>;
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-black via-gray-900 to-gray-950 text-gray-100">
       <Navbar />
-      <main className="min-h-screen px-6 py-10 bg-gray-50">
-        <div className="max-w-xl mx-auto space-y-6">
-          <h1 className="text-2xl font-semibold">🎟️ Claim Your Event NFT</h1>
-          <p className="text-gray-700">Scan using your camera or upload a QR image to claim instantly.</p>
 
+      <main className="flex-grow px-6 py-12 flex items-center justify-center">
+        <div className="max-w-xl w-full bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700 p-8 space-y-6">
+          <h1 className="text-3xl font-bold text-fuchsia-400 text-center">
+            🎟️ Claim Your Event NFT
+          </h1>
+          <p className="text-center text-gray-400">
+            Scan using your camera or upload a QR image to claim instantly.
+          </p>
+
+          {/* Video feed */}
           <div className="flex flex-col items-center gap-4">
-            {/* Video feed */}
-            <video ref={videoRef} className="w-full max-w-sm rounded shadow bg-white" />
+            <video
+              ref={videoRef}
+              className="w-full max-w-sm rounded-lg shadow border border-gray-700 bg-black"
+            />
 
             {/* Hybrid scan toggle */}
             <button
               onClick={toggleScanner}
-              className={`px-4 py-2 rounded text-white ${scanning ? 'bg-red-500' : 'bg-green-600'}`}
+              className={`px-5 py-2 rounded font-medium transition text-white ${
+                scanning
+                  ? 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800'
+                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+              }`}
             >
               {scanning ? '🛑 Stop Scanning' : '📷 Start Scanning'}
             </button>
 
             {/* Hybrid image upload toggle */}
             {!imageUploaded ? (
-              <label className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded cursor-pointer">
+              <label className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-5 py-2 rounded cursor-pointer text-white font-medium transition">
                 📁 Upload QR Image
                 <input
                   ref={fileInputRef}
@@ -169,7 +176,7 @@ export default function ClaimPage() {
             ) : (
               <button
                 onClick={handleRemoveImage}
-                className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded"
+                className="bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 px-5 py-2 rounded text-white font-medium transition"
               >
                 ❌ Remove Image
               </button>
@@ -178,12 +185,24 @@ export default function ClaimPage() {
 
           {/* Status message */}
           {status && (
-            <p className="mt-4 text-center text-sm font-medium text-gray-800 whitespace-pre-line">
+            <p
+              className={`mt-4 text-center text-sm font-medium whitespace-pre-line ${
+                status.startsWith('✅')
+                  ? 'text-green-400'
+                  : status.startsWith('❌')
+                  ? 'text-red-400'
+                  : 'text-yellow-300'
+              }`}
+            >
               {status}
             </p>
           )}
         </div>
       </main>
-    </>
+
+      <footer className="text-center py-6 text-sm text-gray-500">
+        Made with ❤️ by <span className="text-purple-400">Team SoulPass</span>
+      </footer>
+    </div>
   );
 }

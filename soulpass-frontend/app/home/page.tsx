@@ -46,24 +46,31 @@ export default function HomePage() {
     uri ? uri.replace('ipfs://', 'https://ipfs.io/ipfs/') : '';
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-purple-100 text-gray-800">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-950 text-gray-100">
       {/* ✅ Shared Navbar */}
       <Navbar showProfile={true} />
 
       {/* Main content */}
       <main className="flex-grow px-6 py-10 max-w-5xl mx-auto w-full">
         <div className="mb-10">
-          <h2 className="text-3xl font-semibold mb-2">👋 Welcome, {user?.email?.address}</h2>
-          <p className="text-gray-600">
-            Your wallet: <span className="font-mono text-sm">{user?.wallet?.address}</span>
+          <h2 className="text-3xl font-semibold mb-2 text-fuchsia-400">
+            👋 Welcome, {user?.email?.address}
+          </h2>
+          <p className="text-gray-400">
+            Your wallet:{' '}
+            <span className="font-mono text-sm text-purple-300">
+              {user?.wallet?.address}
+            </span>
           </p>
         </div>
 
         <div>
-          <h3 className="text-2xl font-semibold mb-6">📅 Upcoming Events</h3>
+          <h3 className="text-2xl font-semibold mb-6 text-purple-300">
+            📅 Upcoming Events
+          </h3>
 
           {loading ? (
-            <p className="text-gray-500">⏳ Loading events...</p>
+            <p className="text-gray-400">⏳ Loading events...</p>
           ) : events.length === 0 ? (
             <p className="text-gray-500 italic">No events available yet.</p>
           ) : (
@@ -71,24 +78,26 @@ export default function HomePage() {
               {events.map((event) => (
                 <div
                   key={event._id}
-                  className="bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-400 transition p-4 flex flex-col justify-between"
+                  className="bg-gray-900/70 backdrop-blur-md rounded-xl shadow-lg border border-gray-700 hover:border-fuchsia-500 transition p-4 flex flex-col justify-between"
                 >
                   {event.image && (
                     <img
                       src={ipfsToGateway(event.image)}
                       alt={event.name}
-                      className="rounded-lg mb-3 w-full h-40 object-cover"
+                      className="rounded-lg mb-3 w-full h-40 object-cover border border-gray-700"
                     />
                   )}
                   <div>
-                    <h4 className="text-lg font-bold text-blue-800">{event.name}</h4>
-                    <span className="inline-block mt-1 text-sm text-white bg-blue-600 px-2 py-0.5 rounded">
+                    <h4 className="text-lg font-bold text-fuchsia-300">
+                      {event.name}
+                    </h4>
+                    <span className="inline-block mt-1 text-xs text-white bg-gradient-to-r from-purple-700 to-fuchsia-700 px-2 py-0.5 rounded">
                       {new Date(event.createdAt).toLocaleDateString()}
                     </span>
-                    <p className="mt-2 text-sm text-gray-700">{event.description}</p>
+                    <p className="mt-2 text-sm text-gray-300">{event.description}</p>
                   </div>
                   <button
-                    className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded"
+                    className="mt-4 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white text-sm px-4 py-2 rounded disabled:opacity-50"
                     disabled
                   >
                     🎟️ Attend Now
@@ -101,8 +110,9 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-sm text-gray-600 bg-transparent">
-        Made with ❤️ by Team SoulPass — Secure Your Credentials on Chain 🛡️
+      <footer className="text-center py-6 text-sm text-gray-500 bg-transparent">
+        Made with ❤️ by Team SoulPass —{' '}
+        <span className="text-fuchsia-400">Secure Your Credentials on Chain 🛡️</span>
       </footer>
     </div>
   );

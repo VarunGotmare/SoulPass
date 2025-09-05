@@ -5,19 +5,19 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { ready, authenticated, logout, login } = usePrivy();
   const router = useRouter();
   const pathname = usePathname();
 
   if (!ready) return null;
 
   return (
-    <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-100 to-blue-100 shadow-md px-6 py-4 w-full">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+    <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-md">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
         {/* Logo */}
         <Link
           href={authenticated ? '/home' : '/'}
-          className="text-3xl font-extrabold text-purple-700 tracking-tight hover:opacity-90 transition"
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text hover:opacity-90 transition"
         >
           🎓 SoulPass
         </Link>
@@ -28,16 +28,17 @@ export default function Navbar() {
             {/* Claim NFT Button */}
             <Link
               href="/claim"
-              className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-md transition font-medium shadow"
+              className="relative bg-gradient-to-r from-green-400 to-green-600 text-white text-sm px-4 py-2 rounded-md font-medium shadow-md overflow-hidden group"
             >
-              🎟️ Claim NFT
+              <span className="relative z-10">🎟️ Claim NFT</span>
+              <span className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-700 opacity-0 group-hover:opacity-100 transition" />
             </Link>
 
-            {/* Profile Link (hidden on profile page) */}
+            {/* Profile Link */}
             {pathname !== '/profile' && (
               <Link
                 href="/profile"
-                className="text-purple-800 hover:underline font-semibold text-sm"
+                className="text-purple-300 hover:text-purple-200 font-semibold text-sm transition"
               >
                 My Profile
               </Link>
@@ -46,17 +47,19 @@ export default function Navbar() {
             {/* Logout Button */}
             <button
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm rounded-md font-medium shadow"
+              className="relative bg-gradient-to-r from-red-500 to-red-700 text-white px-4 py-2 text-sm rounded-md font-medium shadow-md overflow-hidden group"
             >
-              Logout
+              <span className="relative z-10">Logout</span>
+              <span className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-800 opacity-0 group-hover:opacity-100 transition" />
             </button>
           </div>
         ) : (
           <button
             onClick={login}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full font-semibold shadow-md border border-purple-800 transition"
+            className="relative bg-gradient-to-r from-purple-500 to-blue-600 text-white px-6 py-2 rounded-full font-semibold shadow-md border border-purple-700/60 overflow-hidden group"
           >
-            Login
+            <span className="relative z-10">Login</span>
+            <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-700 opacity-0 group-hover:opacity-100 transition" />
           </button>
         )}
       </div>
